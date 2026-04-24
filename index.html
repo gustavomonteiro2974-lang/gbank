@@ -4,11 +4,159 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>G BANK (DEMO)</title>
-</head>
-<body style="background:black; color:white; text-align:center; font-family:Arial;">
 
-<h1>G BANK (DEMO)</h1>
-<p>Seu app está funcionando 🚀</p>
+<style>
+body {
+  font-family: Arial;
+  background: #0d1117;
+  color: white;
+  margin: 0;
+}
+
+header {
+  background: #161b22;
+  padding: 15px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.container {
+  padding: 20px;
+}
+
+.card {
+  background: #21262d;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+button {
+  background: #238636;
+  border: none;
+  padding: 10px;
+  color: white;
+  border-radius: 5px;
+  width: 100%;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: none;
+}
+
+#app { display: none; }
+.small { font-size: 12px; color: gray; text-align: center; }
+</style>
+</head>
+
+<body>
+
+<header>G BANK (DEMO)</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login" class="card">
+<h2>Login</h2>
+<input type="text" id="user" placeholder="Usuário">
+<input type="password" id="pass" placeholder="Senha">
+<button onclick="entrar()">Entrar</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+<div class="card">
+<h2>Saldo</h2>
+<h1 id="saldo">R$ 0</h1>
+<input type="number" id="novoSaldo" placeholder="Novo saldo">
+<button onclick="alterarSaldo()">Alterar saldo</button>
+</div>
+
+<div class="card">
+<h2>Adicionar transação</h2>
+<input type="text" id="nome" placeholder="Nome">
+<input type="text" id="desc" placeholder="Descrição">
+<input type="number" id="valor" placeholder="Valor">
+<button onclick="add()">Adicionar</button>
+</div>
+
+<div class="card">
+<h2>Extrato</h2>
+<ul id="lista"></ul>
+</div>
+
+<button onclick="sair()">Sair</button>
+
+</div>
+
+<p class="small">⚠️ Simulação (DEMO)</p>
+
+</div>
+
+<script>
+let saldo = localStorage.getItem("saldo") ? parseFloat(localStorage.getItem("saldo")) : 1000;
+let extrato = localStorage.getItem("extrato") ? JSON.parse(localStorage.getItem("extrato")) : [];
+
+function salvar() {
+  localStorage.setItem("saldo", saldo);
+  localStorage.setItem("extrato", JSON.stringify(extrato));
+}
+
+function atualizar() {
+  document.getElementById("saldo").innerText = "R$ " + saldo;
+  let lista = document.getElementById("lista");
+  lista.innerHTML = "";
+  extrato.forEach(t => {
+    let li = document.createElement("li");
+    li.innerText = t;
+    lista.appendChild(li);
+  });
+}
+
+function entrar() {
+  let u = document.getElementById("user").value;
+  let p = document.getElementById("pass").value;
+
+  if (u && p) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    atualizar();
+  }
+}
+
+function sair() {
+  location.reload();
+}
+
+function alterarSaldo() {
+  let v = document.getElementById("novoSaldo").value;
+  if (v) {
+    saldo = parseFloat(v);
+    salvar();
+    atualizar();
+  }
+}
+
+function add() {
+  let nome = document.getElementById("nome").value;
+  let desc = document.getElementById("desc").value;
+  let valor = parseFloat(document.getElementById("valor").value);
+
+  if (!nome || !desc || isNaN(valor)) return;
+
+  saldo += valor;
+  let texto = nome + " - " + desc + " - R$ " + valor;
+  extrato.unshift(texto);
+
+  salvar();
+  atualizar();
+}
+</script>
 
 </body>
 </html>
