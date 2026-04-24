@@ -3,154 +3,152 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>G BANK (DEMO)</title>
+
+<title>G BANK</title>
+
+<link rel="manifest" href="manifest.json">
 
 <style>
 body {
-  font-family: Arial;
-  background: #0d1117;
-  color: white;
   margin: 0;
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
 }
 
-header {
-  background: #161b22;
-  padding: 15px;
-  text-align: center;
-  font-size: 20px;
-}
-
-.container {
+.header {
   padding: 20px;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.saldo-box {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  margin: 20px;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.saldo-box h1 {
+  font-size: 32px;
 }
 
 .card {
-  background: #21262d;
+  background: #1e293b;
+  margin: 15px;
   padding: 15px;
   border-radius: 10px;
-  margin-bottom: 10px;
-}
-
-button {
-  background: #238636;
-  border: none;
-  padding: 10px;
-  color: white;
-  border-radius: 5px;
-  width: 100%;
 }
 
 input {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
-  border-radius: 5px;
+  border-radius: 8px;
   border: none;
 }
 
-#app { display: none; }
-.small { font-size: 12px; color: gray; text-align: center; }
+button {
+  width: 100%;
+  padding: 12px;
+  background: #22c55e;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 10px;
+  border-bottom: 1px solid #334155;
+}
+
+.demo {
+  text-align: center;
+  font-size: 12px;
+  color: gray;
+}
 </style>
 </head>
 
 <body>
 
-<header>G BANK (DEMO)</header>
+<div class="header">G BANK</div>
 
-<div class="container">
-
-<!-- LOGIN -->
 <div id="login" class="card">
-<h2>Login</h2>
-<input type="text" id="user" placeholder="Usuário">
-<input type="password" id="pass" placeholder="Senha">
-<button onclick="entrar()">Entrar</button>
+<h3>Entrar</h3>
+<input id="user" placeholder="Usuário">
+<input id="pass" type="password" placeholder="Senha">
+<button onclick="login()">Entrar</button>
 </div>
 
-<!-- APP -->
-<div id="app">
+<div id="app" style="display:none">
 
-<div class="card">
-<h2>Saldo</h2>
+<div class="saldo-box">
+<p>Saldo disponível</p>
 <h1 id="saldo">R$ 0</h1>
-<input type="number" id="novoSaldo" placeholder="Novo saldo">
-<button onclick="alterarSaldo()">Alterar saldo</button>
 </div>
 
 <div class="card">
-<h2>Adicionar transação</h2>
-<input type="text" id="nome" placeholder="Nome">
-<input type="text" id="desc" placeholder="Descrição">
-<input type="number" id="valor" placeholder="Valor">
-<button onclick="add()">Adicionar</button>
+<input id="valor" type="number" placeholder="Valor">
+<input id="nome" placeholder="Nome">
+<button onclick="add()">Adicionar transação</button>
 </div>
 
 <div class="card">
-<h2>Extrato</h2>
+<h3>Extrato</h3>
 <ul id="lista"></ul>
 </div>
 
-<button onclick="sair()">Sair</button>
+<button onclick="logout()">Sair</button>
 
 </div>
 
-<p class="small">⚠️ Simulação (DEMO)</p>
-
-</div>
+<p class="demo">⚠️ Aplicação DEMO (simulação)</p>
 
 <script>
 let saldo = localStorage.getItem("saldo") ? parseFloat(localStorage.getItem("saldo")) : 1000;
 let extrato = localStorage.getItem("extrato") ? JSON.parse(localStorage.getItem("extrato")) : [];
 
-function salvar() {
+function salvar(){
   localStorage.setItem("saldo", saldo);
   localStorage.setItem("extrato", JSON.stringify(extrato));
 }
 
-function atualizar() {
+function atualizar(){
   document.getElementById("saldo").innerText = "R$ " + saldo;
   let lista = document.getElementById("lista");
   lista.innerHTML = "";
-  extrato.forEach(t => {
+  extrato.forEach(e => {
     let li = document.createElement("li");
-    li.innerText = t;
+    li.innerText = e;
     lista.appendChild(li);
   });
 }
 
-function entrar() {
-  let u = document.getElementById("user").value;
-  let p = document.getElementById("pass").value;
-
-  if (u && p) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    atualizar();
-  }
+function login(){
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  atualizar();
 }
 
-function sair() {
+function logout(){
   location.reload();
 }
 
-function alterarSaldo() {
-  let v = document.getElementById("novoSaldo").value;
-  if (v) {
-    saldo = parseFloat(v);
-    salvar();
-    atualizar();
-  }
-}
-
-function add() {
+function add(){
   let nome = document.getElementById("nome").value;
-  let desc = document.getElementById("desc").value;
   let valor = parseFloat(document.getElementById("valor").value);
 
-  if (!nome || !desc || isNaN(valor)) return;
+  if(!nome || isNaN(valor)) return;
 
   saldo += valor;
-  let texto = nome + " - " + desc + " - R$ " + valor;
+  let texto = nome + " - R$ " + valor;
   extrato.unshift(texto);
 
   salvar();
