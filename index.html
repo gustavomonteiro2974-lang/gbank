@@ -5,115 +5,146 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>G BANK</title>
-
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
-  margin: 0;
+  margin:0;
   font-family: Arial;
-  background: #0f172a;
-  color: white;
+  background:#0f172a;
+  color:white;
+  transition:0.3s;
 }
+
+.light {
+  background:#f1f5f9;
+  color:black;
+}
+
+.splash {
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:#22c55e;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  font-weight:bold;
+  z-index:999;
+}
+
+.hidden { display:none; }
 
 .header {
-  padding: 20px;
-  font-size: 22px;
-  font-weight: bold;
-}
-
-.saldo-box {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  margin: 20px;
-  padding: 20px;
-  border-radius: 15px;
-}
-
-.saldo-box h1 {
-  font-size: 32px;
+  padding:20px;
+  font-size:22px;
+  font-weight:bold;
 }
 
 .card {
-  background: #1e293b;
-  margin: 15px;
-  padding: 15px;
-  border-radius: 10px;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: none;
+  background:#1e293b;
+  margin:15px;
+  padding:15px;
+  border-radius:10px;
 }
 
 button {
-  width: 100%;
-  padding: 12px;
-  background: #22c55e;
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: bold;
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  margin-top:10px;
+  background:#22c55e;
+  color:white;
 }
 
-ul {
-  list-style: none;
-  padding: 0;
+input {
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:8px;
+  border:none;
 }
 
-li {
-  padding: 10px;
-  border-bottom: 1px solid #334155;
+.nav {
+  position:fixed;
+  bottom:0;
+  width:100%;
+  background:#020617;
+  display:flex;
+  justify-content:space-around;
+  padding:10px;
 }
+
+.page { display:none; }
+.active { display:block; }
 
 .demo {
-  text-align: center;
-  font-size: 12px;
-  color: gray;
+  text-align:center;
+  font-size:12px;
+  color:gray;
 }
 </style>
 </head>
 
 <body>
 
+<div id="splash" class="splash">G BANK</div>
+
 <div class="header">G BANK</div>
 
 <div id="login" class="card">
-<h3>Entrar</h3>
+<h3>Login</h3>
 <input id="user" placeholder="Usuário">
 <input id="pass" type="password" placeholder="Senha">
 <button onclick="login()">Entrar</button>
+<button onclick="biometria()">Entrar com digital</button>
 </div>
 
 <div id="app" style="display:none">
 
-<div class="saldo-box">
-<p>Saldo disponível</p>
-<h1 id="saldo">R$ 0</h1>
+<div id="home" class="page active">
+<div class="card">
+<h2 id="saldo">R$ 0</h2>
+<button onclick="toggleTema()">🌗 Alternar tema</button>
 </div>
 
 <div class="card">
-<input id="valor" type="number" placeholder="Valor">
 <input id="nome" placeholder="Nome">
-<button onclick="add()">Adicionar transação</button>
+<input id="valor" type="number" placeholder="Valor">
+<button onclick="add()">Adicionar</button>
 </div>
 
 <div class="card">
-<h3>Extrato</h3>
 <ul id="lista"></ul>
 </div>
+</div>
 
-<button onclick="logout()">Sair</button>
+<div id="grafico" class="page">
+<div class="card">
+<canvas id="chart"></canvas>
+</div>
+</div>
 
 </div>
 
-<p class="demo">⚠️ Aplicação DEMO (simulação)</p>
+<div class="nav">
+<span onclick="nav('home')">🏠</span>
+<span onclick="nav('grafico')">📊</span>
+</div>
+
+<p class="demo">⚠️ DEMO</p>
 
 <script>
 let saldo = localStorage.getItem("saldo") ? parseFloat(localStorage.getItem("saldo")) : 1000;
 let extrato = localStorage.getItem("extrato") ? JSON.parse(localStorage.getItem("extrato")) : [];
+let userSaved = localStorage.getItem("user");
+
+let audio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
+
+setTimeout(()=>document.getElementById("splash").classList.add("hidden"),2000);
 
 function salvar(){
   localStorage.setItem("saldo", saldo);
@@ -121,38 +152,67 @@ function salvar(){
 }
 
 function atualizar(){
-  document.getElementById("saldo").innerText = "R$ " + saldo;
-  let lista = document.getElementById("lista");
-  lista.innerHTML = "";
-  extrato.forEach(e => {
-    let li = document.createElement("li");
-    li.innerText = e;
+  document.getElementById("saldo").innerText="R$ "+saldo;
+
+  let lista=document.getElementById("lista");
+  lista.innerHTML="";
+  extrato.forEach(e=>{
+    let li=document.createElement("li");
+    li.innerText=e;
     lista.appendChild(li);
   });
+
+  atualizarGrafico();
 }
 
 function login(){
-  document.getElementById("login").style.display = "none";
-  document.getElementById("app").style.display = "block";
+  let u=document.getElementById("user").value;
+  if(!u) return;
+
+  localStorage.setItem("user",u);
+
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="block";
   atualizar();
 }
 
-function logout(){
-  location.reload();
+function biometria(){
+  alert("Biometria reconhecida (DEMO)");
+  login();
 }
 
 function add(){
-  let nome = document.getElementById("nome").value;
-  let valor = parseFloat(document.getElementById("valor").value);
+  let nome=document.getElementById("nome").value;
+  let valor=parseFloat(document.getElementById("valor").value);
+  if(!nome||isNaN(valor)) return;
 
-  if(!nome || isNaN(valor)) return;
+  saldo+=valor;
+  extrato.unshift(nome+" - R$ "+valor);
 
-  saldo += valor;
-  let texto = nome + " - R$ " + valor;
-  extrato.unshift(texto);
-
+  audio.play();
   salvar();
   atualizar();
+}
+
+function nav(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById(p).classList.add('active');
+}
+
+function atualizarGrafico(){
+  let valores=extrato.map(e=>parseFloat(e.split("R$ ")[1])||0);
+
+  new Chart(document.getElementById('chart'), {
+    type:'line',
+    data:{
+      labels:valores.map((_,i)=>"T"+i),
+      datasets:[{data:valores}]
+    }
+  });
+}
+
+function toggleTema(){
+  document.body.classList.toggle("light");
 }
 </script>
 
