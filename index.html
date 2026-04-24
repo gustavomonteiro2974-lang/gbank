@@ -1,220 +1,140 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+import { useEffect, useRef, useState } from "react";
 
-<title>G BANK</title>
-<link rel="manifest" href="manifest.json">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+export default function BankHeistSimulator() { const canvasRef = useRef(null); const [money, setMoney] = useState(0); const [life, setLife] = useState(100);
 
-<style>
-body {
-  margin:0;
-  font-family: Arial;
-  background:#0f172a;
-  color:white;
-  transition:0.3s;
-}
+useEffect(() => { const canvas = canvasRef.current; const ctx = canvas.getContext("2d");
 
-.light {
-  background:#f1f5f9;
-  color:black;
-}
+canvas.width = 800; // simulação 4K reduzida
+canvas.height = 500;
 
-.splash {
-  position:fixed;
-  width:100%;
-  height:100%;
-  background:#22c55e;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:30px;
-  font-weight:bold;
-  z-index:999;
-}
+let player = { x: 100, y: 250, size: 30, speed: 4 };
+let bullets = [];
+let guards = [];
+let bags = [{ x: 700, y: 250, size: 25 }];
 
-.hidden { display:none; }
-
-.header {
-  padding:20px;
-  font-size:22px;
-  font-weight:bold;
-}
-
-.card {
-  background:#1e293b;
-  margin:15px;
-  padding:15px;
-  border-radius:10px;
-}
-
-button {
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  margin-top:10px;
-  background:#22c55e;
-  color:white;
-}
-
-input {
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:8px;
-  border:none;
-}
-
-.nav {
-  position:fixed;
-  bottom:0;
-  width:100%;
-  background:#020617;
-  display:flex;
-  justify-content:space-around;
-  padding:10px;
-}
-
-.page { display:none; }
-.active { display:block; }
-
-.demo {
-  text-align:center;
-  font-size:12px;
-  color:gray;
-}
-</style>
-</head>
-
-<body>
-
-<div id="splash" class="splash">G BANK</div>
-
-<div class="header">G BANK</div>
-
-<div id="login" class="card">
-<h3>Login</h3>
-<input id="user" placeholder="Usuário">
-<input id="pass" type="password" placeholder="Senha">
-<button onclick="login()">Entrar</button>
-<button onclick="biometria()">Entrar com digital</button>
-</div>
-
-<div id="app" style="display:none">
-
-<div id="home" class="page active">
-<div class="card">
-<h2 id="saldo">R$ 0</h2>
-<button onclick="toggleTema()">🌗 Alternar tema</button>
-</div>
-
-<div class="card">
-<input id="nome" placeholder="Nome">
-<input id="valor" type="number" placeholder="Valor">
-<button onclick="add()">Adicionar</button>
-</div>
-
-<div class="card">
-<ul id="lista"></ul>
-</div>
-</div>
-
-<div id="grafico" class="page">
-<div class="card">
-<canvas id="chart"></canvas>
-</div>
-</div>
-
-</div>
-
-<div class="nav">
-<span onclick="nav('home')">🏠</span>
-<span onclick="nav('grafico')">📊</span>
-</div>
-
-<p class="demo">⚠️ DEMO</p>
-
-<script>
-let saldo = localStorage.getItem("saldo") ? parseFloat(localStorage.getItem("saldo")) : 1000;
-let extrato = localStorage.getItem("extrato") ? JSON.parse(localStorage.getItem("extrato")) : [];
-let userSaved = localStorage.getItem("user");
-
-let audio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
-
-setTimeout(()=>document.getElementById("splash").classList.add("hidden"),2000);
-
-function salvar(){
-  localStorage.setItem("saldo", saldo);
-  localStorage.setItem("extrato", JSON.stringify(extrato));
-}
-
-function atualizar(){
-  document.getElementById("saldo").innerText="R$ "+saldo;
-
-  let lista=document.getElementById("lista");
-  lista.innerHTML="";
-  extrato.forEach(e=>{
-    let li=document.createElement("li");
-    li.innerText=e;
-    lista.appendChild(li);
+function spawnGuard() {
+  guards.push({
+    x: 800,
+    y: Math.random() * 450,
+    size: 30,
+    speed: 2,
+    life: 3,
   });
-
-  atualizarGrafico();
 }
 
-function login(){
-  let u=document.getElementById("user").value;
-  if(!u) return;
-
-  localStorage.setItem("user",u);
-
-  document.getElementById("login").style.display="none";
-  document.getElementById("app").style.display="block";
-  atualizar();
+function shoot() {
+  bullets.push({ x: player.x, y: player.y, vx: 6 });
 }
 
-function biometria(){
-  alert("Biometria reconhecida (DEMO)");
-  login();
+function drawPlayer() {
+  ctx.fillStyle = "cyan";
+  ctx.fillRect(player.x, player.y, player.size, player.size);
 }
 
-function add(){
-  let nome=document.getElementById("nome").value;
-  let valor=parseFloat(document.getElementById("valor").value);
-  if(!nome||isNaN(valor)) return;
-
-  saldo+=valor;
-  extrato.unshift(nome+" - R$ "+valor);
-
-  audio.play();
-  salvar();
-  atualizar();
+function drawBullets() {
+  ctx.fillStyle = "yellow";
+  bullets.forEach((b, i) => {
+    b.x += b.vx;
+    ctx.fillRect(b.x, b.y, 5, 3);
+    if (b.x > canvas.width) bullets.splice(i, 1);
+  });
 }
 
-function nav(p){
-  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
-  document.getElementById(p).classList.add('active');
+function drawGuards() {
+  ctx.fillStyle = "red";
+  guards.forEach((g, gi) => {
+    g.x -= g.speed;
+    ctx.fillRect(g.x, g.y, g.size, g.size);
+
+    // colisão com player
+    if (
+      player.x < g.x + g.size &&
+      player.x + player.size > g.x &&
+      player.y < g.y + g.size &&
+      player.y + player.size > g.y
+    ) {
+      setLife((l) => Math.max(0, l - 1));
+    }
+
+    bullets.forEach((b, bi) => {
+      if (
+        b.x < g.x + g.size &&
+        b.x + 5 > g.x &&
+        b.y < g.y + g.size &&
+        b.y + 3 > g.y
+      ) {
+        g.life--;
+        bullets.splice(bi, 1);
+        if (g.life <= 0) {
+          guards.splice(gi, 1);
+          setMoney((m) => m + 500);
+        }
+      }
+    });
+  });
 }
 
-function atualizarGrafico(){
-  let valores=extrato.map(e=>parseFloat(e.split("R$ ")[1])||0);
+function drawBags() {
+  ctx.fillStyle = "gold";
+  bags.forEach((b, i) => {
+    ctx.fillRect(b.x, b.y, b.size, b.size);
 
-  new Chart(document.getElementById('chart'), {
-    type:'line',
-    data:{
-      labels:valores.map((_,i)=>"T"+i),
-      datasets:[{data:valores}]
+    if (
+      player.x < b.x + b.size &&
+      player.x + player.size > b.x &&
+      player.y < b.y + b.size &&
+      player.y + player.size > b.y
+    ) {
+      setMoney((m) => m + 1000);
+      bags.splice(i, 1);
     }
   });
 }
 
-function toggleTema(){
-  document.body.classList.toggle("light");
+function drawHUD() {
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("💰 Dinheiro: " + money, 10, 20);
+  ctx.fillText("❤️ Vida: " + life, 10, 40);
 }
-</script>
 
-</body>
-</html>
+function gameLoop() {
+  ctx.fillStyle = "#111";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawPlayer();
+  drawBullets();
+  drawGuards();
+  drawBags();
+  drawHUD();
+
+  if (life > 0) {
+    requestAnimationFrame(gameLoop);
+  } else {
+    ctx.fillStyle = "red";
+    ctx.font = "40px Arial";
+    ctx.fillText("VOCÊ MORREU", 250, 250);
+  }
+}
+
+const interval = setInterval(spawnGuard, 1500);
+gameLoop();
+
+function handleKey(e) {
+  if (e.key === "w") player.y -= player.speed;
+  if (e.key === "s") player.y += player.speed;
+  if (e.key === "a") player.x -= player.speed;
+  if (e.key === "d") player.x += player.speed;
+  if (e.key === " ") shoot();
+}
+
+window.addEventListener("keydown", handleKey);
+
+return () => {
+  clearInterval(interval);
+  window.removeEventListener("keydown", handleKey);
+};
+
+}, [life, money]);
+
+return ( <div className="flex flex-col items-center"> <h1 className="text-white text-xl">🏦 Simulador de Assalto</h1> <canvas ref={canvasRef} className="border" /> <p className="text-white">WASD para mover | ESPAÇO atira</p> </div> ); }
